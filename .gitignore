@@ -1,0 +1,10 @@
+# Pastas de dados (não subir para o Git)
+data/
+delta/
+*.csv
+*.parquet
+
+# Arquivos do sistema e Python
+__pycache__/
+.DS_Store
+.venv/
