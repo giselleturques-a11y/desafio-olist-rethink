@@ -69,3 +69,45 @@ Além da consolidação principal, foi desenvolvida uma tabela auxiliar focada n
 # Conforme solicitado, segue abaixo a Justificatia solicitada no teste
 * **Justificativa:** Registos com status como "canceled", "unavailable" ou "processing" foram descartados nesta fase, pois não representam faturamento real concluído. Esta ação evita a distorção de KPIs de venda e garante que as análises futuras reflitam apenas transações comerciais efetivadas.
 * ** A Camada Bronze nao pode sofrer alterações nos seus dados, essa camada é responsável por armazenar as informações com a mesma estrutura de onde se originaram os dados. A camada Silver tem a finalidade de fazer as transformações necessárias.
+
+
+
+## 🥇 Camada Gold (Business & Analytics)
+
+A Camada Gold é o destino final do pipeline, onde os dados são transformados em **conhecimento estratégico**. Aqui, aplicamos agregações complexas para gerar tabelas prontas para consumo por ferramentas de BI (como Power BI ou Tableau) e analistas de negócio.
+
+### 📋 Tabelas de Performance Geradas
+
+Nesta etapa, consolidamos três visões principais para monitorar o ecossistema da Olist:
+
+#### 1. 👥 `customer_summary` (Visão do Cliente)
+Consolida o comportamento de compra e satisfação de cada cliente.
+* **KPIs:** - `total_orders`: Volume de pedidos por cliente.
+    - `total_revenue`: Faturamento total (Preço + Frete).
+    - `avg_order_value`: Ticket médio por pedido.
+    - `avg_review_score`: NPS médio (satisfação) do cliente.
+
+#### 2. 📦 `product_summary` (Visão de Produto)
+Analisa a performance de vendas por categoria de produto.
+* **KPIs:**
+    - `total_units_sold`: Volume total de itens vendidos.
+    - `total_revenue`: Receita bruta acumulada por categoria.
+    - `total_orders`: Quantidade de pedidos distintos que contêm a categoria.
+    - `avg_freight_value`: Custo médio de frete (útil para estratégia logística).
+
+#### 3. 🏪 `seller_summary` (Visão do Vendedor)
+Mapeia a eficiência e a localização dos parceiros de venda.
+* **KPIs:**
+    - `total_orders`: Volume de pedidos processados pelo vendedor.
+    - `total_revenue`: Faturamento total gerado pelo seller.
+    - `avg_review_score`: Nota média de avaliação do vendedor (Qualidade do serviço).
+
+---
+
+### 🛠️ Resiliência e Qualidade de Dados (Tratamento de Erros)
+
+Durante o desenvolvimento da Camada Gold, implementamos técnicas avançadas de Engenharia de Dados para garantir a estabilidade do pipeline:
+
+* **Tratamento de Dados Malformados:** Utilizamos a função `try_cast` nas colunas de preço e avaliação. Isso evita que falhas na origem (como datas inseridas em campos numéricos) interrompam a execução, convertendo valores inválidos em `NULL` e preservando a integridade dos cálculos.
+* **Deduplicação de Joins:** As avaliações (*reviews*) foram pré-agrupadas por pedido antes do join final, garantindo que a volumetria de vendas e faturamento não fosse inflada artificialmente.
+* **Evolução de Esquema:** Foi aplicada a opção `overwriteSchema: true` nas gravações Delta, permitindo a atualização ágil dos KPIs sem conflitos de metadados.
