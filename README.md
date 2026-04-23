@@ -163,3 +163,65 @@ Ao final da execução, o script de simulação gera um relatório executivo dir
 - **Mix de Produtos:** Ranking das 3 categorias mais rentáveis.
 - **Geolocalização:** Identificação do estado líder em volumetria de pedidos.
 - **Qualidade de Serviço:** Destaque para o vendedor com melhor reputação (mínimo de 10 pedidos para relevância estatística).
+
+
+
+# 🚀 Olist Data Pipeline: Medallion Architecture
+
+Este repositório contém a implementação de um pipeline de dados escalável utilizando a **Arquitetura Medalhão** (Bronze, Silver e Gold) no Databricks. O projeto transforma dados brutos do e-commerce Olist em indicadores estratégicos de negócio, garantindo governança, qualidade e resiliência.
+
+---
+
+## a) 🏗️ Diagrama da Arquitetura
+
+O fluxo segue o padrão de camadas para garantir a separação de responsabilidades e a linhagem dos dados:
+
+1.  **Bronze (Raw):** Ingestão dos arquivos CSV originais para o formato **Delta**. Mantemos a fidelidade total aos dados de origem, adicionando colunas de auditoria (`ingestion_timestamp` e `source_file`).
+2.  **Silver (Trusted):** Limpeza, tipagem rigorosa e filtragem de status de pedidos (apenas `delivered` e `shipped`). Consolidação das entidades (Pedidos, Itens, Clientes, Produtos e Vendedores) via Joins.
+3.  **Gold (Analytics):** Criação de tabelas agregadas (KPIs) modeladas por entidade para consumo de BI.
+4.  **Output (Delivery):** Simulação de consumo via **Delta Sharing**, exportando os resultados finais em CSV para interoperabilidade.
+
+---
+
+## b) 🧠 Decisões de Design
+
+Durante o desenvolvimento, tomei decisões críticas para garantir a integridade dos KPIs:
+
+* **Filtro de Status de Pedidos:** Decidimos manter apenas pedidos com status `delivered` ou `shipped`. Pedidos cancelados ou pendentes foram descartados para evitar inflar artificialmente as métricas de faturamento e volume.
+* **Tratamento de Dados Malformados:** Implementamos a função `try_cast` no processamento da camada Gold. Isso permite que o pipeline lide com falhas na origem (como datas inseridas em campos de preço) sem interromper o fluxo, gerando valores `NULL` para auditoria posterior.
+* **Gestão de Metadados Delta:** Utilizamos a opção `overwriteSchema: true` para permitir a evolução ágil das tabelas agregadas, garantindo que mudanças nos KPIs fossem aplicadas sem conflitos de metadados.
+
+---
+
+## c) 🛠️ Como rodar o projeto
+
+1.  **Ambiente:** Importe os notebooks para o seu Workspace Databricks.
+2.  **Dados:** Certifique-se de que os arquivos CSV da Olist estão carregados no diretório configurado no notebook Bronze.
+3.  **Execução:** Execute o notebook `pipeline_runner.py`.
+    * Este orquestrador gerencia a execução sequencial: `01_bronze` ➡️ `02_silver` ➡️ `03_gold` ➡️ `05_Simulação_Delta_Sharing`.
+4.  **Monitoramento:** Acompanhe os logs no console para verificar o status de cada etapa e visualizar o **Resumo Executivo** final.
+
+---
+
+## d) 🏭 O que mudaria em produção?
+
+Em um ambiente Enterprise real, as seguintes melhorias seriam fundamentais:
+
+* **Orquestração via ADF/Airflow:** Substituiria o script manual por ferramentas como **Azure Data Factory** para gerenciar retentativas (retries) e dependências complexas.
+* **Unity Catalog:** Implementação de governança centralizada para controle de acesso a nível de linha e coluna e linhagem de dados automática.
+* **Data Quality Framework:** Integração com bibliotecas como *Great Expectations* para bloquear o pipeline caso a qualidade dos dados (ex: receita negativa) seja comprometida.
+
+---
+
+## e) ⚠️ Limitações e Melhorias Futuras
+
+Este projeto foi desenvolvido como um desafio técnico estruturado e possui as seguintes limitações que seriam abordadas em um cenário de longo prazo:
+
+1.  **Processamento Full Load:** Atualmente, o pipeline reprocessa todos os dados em cada execução. O ideal seria implementar uma **Carga Incremental** para reduzir custos computacionais e tempo de processamento.
+2.  **Ausência de Testes Unitários:** Não foram implementados testes automatizados para validar as funções de transformação individuais antes do deploy.
+3.  **Sistema de Alerta:** O orquestrador captura erros, mas não envia notificações. Em produção, seria necessária a integração com **Slack** ou **PagerDuty** para alertar a equipe de plantão sobre falhas.
+4.  **Hardcoded Paths:** Alguns caminhos de diretórios estão fixos no código. O uso de **Parâmetros de Notebook** ou **Key Vaults** seria a prática recomendada para maior segurança e flexibilidade.
+
+---
+**Desenvolvido por:** Giselle da Silva Turques
+**Ferramentas Utilizadas:** PySpark, Delta Lake, Databricks.
