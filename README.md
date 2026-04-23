@@ -111,3 +111,12 @@ Durante o desenvolvimento da Camada Gold, implementamos técnicas avançadas de 
 * **Tratamento de Dados Malformados:** Utilizamos a função `try_cast` nas colunas de preço e avaliação. Isso evita que falhas na origem (como datas inseridas em campos numéricos) interrompam a execução, convertendo valores inválidos em `NULL` e preservando a integridade dos cálculos.
 * **Deduplicação de Joins:** As avaliações (*reviews*) foram pré-agrupadas por pedido antes do join final, garantindo que a volumetria de vendas e faturamento não fosse inflada artificialmente.
 * **Evolução de Esquema:** Foi aplicada a opção `overwriteSchema: true` nas gravações Delta, permitindo a atualização ágil dos KPIs sem conflitos de metadados.
+
+
+### 🛠️ Refatoração e Ajustes Técnicos (Silver)
+
+Durante o desenvolvimento da Camada Silver, foram aplicadas melhorias estruturais para garantir a resiliência do pipeline de orquestração:
+
+* **Saneamento de Caminhos (Paths):** Após a limpeza da Camada Bronze, os caminhos de leitura foram normalizados para refletir a nova nomenclatura das entidades (ex: de `olist_products_dataset` para `products`). Isso eliminou erros de `ResourceNotFound` durante a execução automatizada.
+* **Consistência de Esquema:** Implementação do uso de `overwriteSchema: true` nas gravações Delta da Silver. Essa prática permite que alterações no contrato de dados (como a renomeação de colunas de auditoria para evitar duplicidade em Joins) sejam aplicadas sem conflitos de metadados.
+* **Rastreabilidade de Auditoria:** As colunas de timestamp foram renomeadas dinamicamente durante os Joins (ex: `ingestion_timestamp_items`, `ingestion_timestamp_cust`), preservando a linhagem de cada registro sem causar colisões de nomes no DataFrame final.
