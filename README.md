@@ -120,3 +120,19 @@ Durante o desenvolvimento da Camada Silver, foram aplicadas melhorias estruturai
 * **Saneamento de Caminhos (Paths):** Após a limpeza da Camada Bronze, os caminhos de leitura foram normalizados para refletir a nova nomenclatura das entidades (ex: de `olist_products_dataset` para `products`). Isso eliminou erros de `ResourceNotFound` durante a execução automatizada.
 * **Consistência de Esquema:** Implementação do uso de `overwriteSchema: true` nas gravações Delta da Silver. Essa prática permite que alterações no contrato de dados (como a renomeação de colunas de auditoria para evitar duplicidade em Joins) sejam aplicadas sem conflitos de metadados.
 * **Rastreabilidade de Auditoria:** As colunas de timestamp foram renomeadas dinamicamente durante os Joins (ex: `ingestion_timestamp_items`, `ingestion_timestamp_cust`), preservando a linhagem de cada registro sem causar colisões de nomes no DataFrame final.
+
+
+## ⚙️ Orquestração e Entrega Final
+
+### 🤖 Automação do Pipeline (`pipeline_runner.py`)
+Para garantir a integridade e a ordem de execução das camadas (Bronze → Silver → Gold), foi desenvolvido um orquestrador centralizado que simula o comportamento de ferramentas de mercado como o **Azure Data Factory** ou **Airflow**.
+
+* **Resiliência:** O script utiliza blocos de tratamento de erro que capturam falhas em notebooks específicos, registram o log detalhado com *timestamp* e permitem que o pipeline prossiga, garantindo que o sistema não fique travado por erros isolados.
+* **Monitoramento:** Logs de console indicam o tempo de início e término de cada etapa, facilitando a auditoria de performance.
+
+### 📤 Simulação de Delta Sharing (`04_share_simulation.py`)
+Como etapa final de entrega de valor, foi implementada uma rotina que prepara os dados para o consumo por sistemas externos e ferramentas de BI:
+
+* **Consumo Interoperável:** As tabelas da Camada Gold são lidas em formato Delta e convertidas para **CSV**.
+* **Otimização de Ficheiros:** Utilização da função `coalesce(1)` para garantir que cada relatório (Clientes, Produtos e Vendedores) seja entregue como um ficheiro único, facilitando a importação direta em dashboards.
+* **Diretório de Output:** Os ficheiros finais são disponibilizados na pasta `/data/delta/output/`, prontos para distribuição.
