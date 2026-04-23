@@ -113,7 +113,7 @@ Durante o desenvolvimento da Camada Gold, implementamos técnicas avançadas de 
 * **Evolução de Esquema:** Foi aplicada a opção `overwriteSchema: true` nas gravações Delta, permitindo a atualização ágil dos KPIs sem conflitos de metadados.
 
 
-### 🛠️ Refatoração e Ajustes Técnicos (Silver)
+### 🛠️  Refatoração e Ajustes Técnicos (Silver)
 
 Durante o desenvolvimento da Camada Silver, foram aplicadas melhorias estruturais para garantir a resiliência do pipeline de orquestração:
 
@@ -122,7 +122,7 @@ Durante o desenvolvimento da Camada Silver, foram aplicadas melhorias estruturai
 * **Rastreabilidade de Auditoria:** As colunas de timestamp foram renomeadas dinamicamente durante os Joins (ex: `ingestion_timestamp_items`, `ingestion_timestamp_cust`), preservando a linhagem de cada registro sem causar colisões de nomes no DataFrame final.
 
 
-## ⚙️ Orquestração e Entrega Final
+## ⚙️ Etapa 4: Orquestração e Entrega Final (04_pipeline_runner)
 
 ### 🤖 Automação do Pipeline (`pipeline_runner.py`)
 Para garantir a integridade e a ordem de execução das camadas (Bronze → Silver → Gold), foi desenvolvido um orquestrador centralizado que simula o comportamento de ferramentas de mercado como o **Azure Data Factory** ou **Airflow**.
@@ -136,3 +136,30 @@ Como etapa final de entrega de valor, foi implementada uma rotina que prepara os
 * **Consumo Interoperável:** As tabelas da Camada Gold são lidas em formato Delta e convertidas para **CSV**.
 * **Otimização de Ficheiros:** Utilização da função `coalesce(1)` para garantir que cada relatório (Clientes, Produtos e Vendedores) seja entregue como um ficheiro único, facilitando a importação direta em dashboards.
 * **Diretório de Output:** Os ficheiros finais são disponibilizados na pasta `/data/delta/output/`, prontos para distribuição.
+
+
+
+## 📤 Etapa 5: Simulação de Delta Sharing (`05_Simulação_Delta_Sharing.py`)
+
+Esta etapa final do pipeline simula a distribuição segura de dados para parceiros ou ferramentas de visualização, transformando as tabelas analíticas em formatos de fácil consumo.
+
+### ⚙️ Lógica de Processamento
+* **Interoperabilidade:** O script consome as tabelas Delta da Camada Gold e as converte para o formato **CSV**, garantindo que os dados possam ser lidos por qualquer ferramenta (Excel, Power BI, Python, etc.).
+* **Consolidação:** Utilização da função `.coalesce(1)` para evitar a fragmentação do arquivo. Isso garante que cada tabela Gold resulte em um único arquivo CSV legível, em vez de múltiplas partições.
+* **Automação:** O processo percorre automaticamente a lista de tabelas geradas na Gold, aplicando o cabeçalho (`header=true`) e sobrescrevendo versões antigas no diretório de saída.
+
+### 📂 Estrutura de Saída (Output)
+Os arquivos são disponibilizados no caminho `dbfs:/Volumes/workspace/default/data/delta/output/`:
+- `gold_customer_summary_export.csv`
+- `gold_product_summary_export.csv`
+- `gold_seller_summary_export.csv`
+
+
+
+### 📊 Resumo Executivo (Insights de Negócio)
+Ao final da execução, o script de simulação gera um relatório executivo diretamente no console, fornecendo métricas críticas para a tomada de decisão:
+- **Abrangência de Mercado:** Total de clientes únicos processados.
+- **Saúde Financeira:** Receita total consolidada do ecossistema.
+- **Mix de Produtos:** Ranking das 3 categorias mais rentáveis.
+- **Geolocalização:** Identificação do estado líder em volumetria de pedidos.
+- **Qualidade de Serviço:** Destaque para o vendedor com melhor reputação (mínimo de 10 pedidos para relevância estatística).
